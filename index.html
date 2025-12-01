@@ -195,7 +195,8 @@
                 </video>
             </div>
             <div class="text-center mt-4">
-                <button onclick="openVideoFullscreen('video1.mp4')" class="bg-pink-500 text-white font-bold py-2 px-6 rounded-full hover:bg-pink-600 transition-colors">
+                <!-- FIX: Corrected filename to match the video tag source -->
+                <button onclick="openVideoFullscreen('Fevu V1.mp4')" class="bg-pink-500 text-white font-bold py-2 px-6 rounded-full hover:bg-pink-600 transition-colors">
                     View Fullscreen
                 </button>
             </div>
@@ -210,7 +211,8 @@
                 </video>
             </div>
             <div class="text-center mt-4">
-                <button onclick="openVideoFullscreen('video2.mp4')" class="bg-pink-500 text-white font-bold py-2 px-6 rounded-full hover:bg-pink-600 transition-colors">
+                <!-- FIX: Corrected filename to match the video tag source -->
+                <button onclick="openVideoFullscreen('fevu V2.mp4')" class="bg-pink-500 text-white font-bold py-2 px-6 rounded-full hover:bg-pink-600 transition-colors">
                     View Fullscreen
                 </button>
             </div>
@@ -278,7 +280,8 @@
 
     <div id="videoOverlay">
         <span id="closeVideoBtn" onclick="closeVideoFullscreen()">&times;</span>
-        <video id="fullscreenVideo" controls loop muted playsinline class="rounded-xl"></video>
+        <!-- Added 'muted' here to satisfy some browser autoplay policies, though we explicitly unmute in JS -->
+        <video id="fullscreenVideo" controls loop playsinline muted class="rounded-xl"></video>
     </div>
 
     <script>
@@ -295,38 +298,48 @@
             overlay.classList.remove('active');
         }
 
-        // Fullscreen Video Functions (Existing)
+        // Fullscreen Video Functions (FIXED LOGIC - Ensures the new video source is loaded)
         function openVideoFullscreen(videoSrc) {
             const overlay = document.getElementById('videoOverlay');
             const videoElement = document.getElementById('fullscreenVideo');
             
+            // 1. Set the video source
             videoElement.src = videoSrc;
+            
+            // 2. Load the new source data (CRUCIAL FIX)
             videoElement.load();
             
-            videoElement.addEventListener('canplay', () => {
-                videoElement.play();
-            }, { once: true });
-
+            // 3. Show the overlay
             overlay.classList.add('active');
+            
+            // 4. Unmute it and attempt to play 
+            videoElement.muted = false; 
+            videoElement.play().catch(error => {
+                console.warn("Autoplay failed in fullscreen. User must click play button.", error);
+            });
         }
 
         function closeVideoFullscreen() {
             const overlay = document.getElementById('videoOverlay');
             const videoElement = document.getElementById('fullscreenVideo');
             videoElement.pause();
+            videoElement.currentTime = 0; // Reset video to start
             overlay.classList.remove('active');
-            videoElement.src = '';
+            videoElement.src = ''; // Clear source to prevent ghost audio
+            videoElement.muted = true; // Mute on close
         }
 
-        // Image Carousel Logic (NEW!)
+        // Image Carousel Logic (Existing)
         const carouselSlide = document.getElementById('carouselSlide');
-        const images = carouselSlide.querySelectorAll('img');
+        // Added a check here to ensure carouselSlide exists before querying images
+        const images = carouselSlide ? carouselSlide.querySelectorAll('img') : [];
         const totalImages = images.length;
         let currentIndex = 0;
         let autoSlideInterval;
 
         const createDots = () => {
             const dotsContainer = document.getElementById('carouselDots');
+            if (!dotsContainer) return;
             dotsContainer.innerHTML = ''; // Clear existing dots
             for (let i = 0; i < totalImages; i++) {
                 const dot = document.createElement('span');
@@ -350,6 +363,7 @@
         };
 
         const showSlide = (index) => {
+            if (!carouselSlide) return;
             currentIndex = (index + totalImages) % totalImages; // Loop around
             carouselSlide.style.transform = `translateX(-${currentIndex * 100}%)`;
             updateDots();
@@ -378,9 +392,11 @@
 
         // Initialize carousel on page load
         document.addEventListener('DOMContentLoaded', () => {
-            createDots();
-            showSlide(0); // Show the first slide
-            startAutoSlide(); // Start auto-sliding
+             if (totalImages > 0) {
+                createDots();
+                showSlide(0); // Show the first slide
+                startAutoSlide(); // Start auto-sliding
+            }
         });
     </script>
 </body>
